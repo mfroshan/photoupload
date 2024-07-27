@@ -61,6 +61,7 @@ const authorize = async () => {
     const client_email = process.env.CLIENT_EMAIL;
     const private_key = process.env.PRIVATE_KEY;
     const SCOPE = ['https://www.googleapis.com/auth/drive'];
+    
     const jwtClient = new google.auth.JWT(client_email, null, private_key, SCOPE);
     await jwtClient.authorize();
     return jwtClient;
@@ -77,5 +78,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
+  console.log(process.env.CLIENT_EMAIL)
   console.log(`Server is running on port ${port}`);
 });
