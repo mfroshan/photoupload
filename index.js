@@ -19,11 +19,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/',(req,res)=>{
-  res.send('Your server is up!')
-})
+app.get('/', (req, res) => {
+  res.send('Your server is up!');
+});
+
 // Upload route
-app.post('/api/upload', upload.array('files'), async (req, res) => {
+app.post('/api/upload', upload.array('files'), async (req, res, next) => {
   try {
     const auth = await authorize();
     const drive = google.drive({ version: 'v3', auth });
@@ -49,7 +50,8 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
     const results = await Promise.all(filePromises);
     res.status(200).json({ files: results.map(result => result.data.id) });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in /api/upload route:', error); // Log error details
+    next(error); // Pass the error to the error-handling middleware
   }
 });
 
@@ -62,6 +64,12 @@ const authorize = async () => {
   await jwtClient.authorize();
   return jwtClient;
 };
+
+// Error-handling middleware
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err); // Log the error
+  res.status(500).json({ error: 'Something went wrong, please try again later.' });
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
