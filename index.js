@@ -2,10 +2,10 @@ import express from 'express';
 import multer from 'multer';
 import { google } from 'googleapis';
 import cors from 'cors';
-import dotenv from 'dotenv'; // Import dotenv
-import { Readable } from 'stream'; // Import the stream module
+import dotenv from 'dotenv';
+import { Readable } from 'stream';
 
-dotenv.config(); // Load environment variables from .env
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 // Upload route
 app.post('/api/upload', upload.array('files'), async (req, res, next) => {
   try {
-    const auth = await authorize();
+    const auth = await authorize(); // Moved into try-catch
     const drive = google.drive({ version: 'v3', auth });
 
     const filePromises = req.files.map(file => {
@@ -36,7 +36,7 @@ app.post('/api/upload', upload.array('files'), async (req, res, next) => {
       };
 
       const media = {
-        body: Readable.from(file.buffer), // Convert Buffer to Readable stream
+        body: Readable.from(file.buffer),
         mimeType: file.mimetype,
       };
 
@@ -57,18 +57,23 @@ app.post('/api/upload', upload.array('files'), async (req, res, next) => {
 
 // Authorize function for Google Drive
 const authorize = async () => {
-  const client_email = process.env.client_email; 
-  const private_key  = process.env.private_key; // Use environment variables
-  const SCOPE = ['https://www.googleapis.com/auth/drive'];
-  const jwtClient = new google.auth.JWT(client_email, null, private_key, SCOPE);
-  await jwtClient.authorize();
-  return jwtClient;
+  try {
+    const client_email = process.env.CLIENT_EMAIL;
+    const private_key = process.env.PRIVATE_KEY;
+    const SCOPE = ['https://www.googleapis.com/auth/drive'];
+    const jwtClient = new google.auth.JWT(client_email, null, private_key, SCOPE);
+    await jwtClient.authorize();
+    return jwtClient;
+  } catch (error) {
+    console.error('Authorization error:', error); // Log authorization errors
+    throw new Error('Authorization failed'); // Throw a generic error message
+  }
 };
 
-// Error-handling middleware
+// Global error-handling middleware
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err); // Log the error
-  res.status(500).json({ error: 'Something went wrong, please try again later.' });
+  console.error('Global error handler:', err); // Log error details
+  res.status(500).json({ error: err.message }); // Respond with a generic error message
 });
 
 app.listen(port, () => {
