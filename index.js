@@ -19,6 +19,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/',(req,res)=>{
+  res.send('Your server is up!')
+})
 // Upload route
 app.post('/api/upload', upload.array('files'), async (req, res) => {
   try {
